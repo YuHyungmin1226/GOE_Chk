@@ -1,0 +1,30 @@
+# API Keys and Secrets
+.env
+
+# Google API Credentials and Tokens
+credentials.json
+token.json
+
+# Local Databases and Snapshots (Personal/Work Data)
+*.db
+AtMessenger_Latest.db
+Talk_temp.db*
+
+# Local State / Persistence
+processed_ids.json
+
+# Binaries and Build Artifacts
+at_decryptor.exe
+__pycache__/
+*.pyc
+*.exe
+
+# Logs
+result.txt
+*.log
+
+# Environment and IDE
+.venv/
+venv/
+.vscode/
+.idea/
