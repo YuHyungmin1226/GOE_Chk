@@ -2,6 +2,7 @@ import os
 import json
 import requests
 from google.auth.transport.requests import Request
+from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
@@ -28,12 +29,20 @@ def get_service():
     # 유효한 자격 증명이 없으면 로그인을 요청합니다.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            try:
+                creds.refresh(Request())
+            except RefreshError as e:
+                logger.warning(f"토큰 갱신 실패 (아마도 만료됨). 재인증을 진행합니다: {e}")
+                if os.path.exists('token.json'):
+                    os.remove('token.json')
+                creds = None
+        
+        if not creds or not creds.valid:
             if not os.path.exists('credentials.json'):
                 logger.error("'credentials.json' 파일이 없습니다. Google Cloud Console에서 다운로드하여 배치해주세요.")
                 return None
             
+            logger.info("웹 브라우저를 열어 새로운 Google 인증을 진행합니다...")
             flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
         
