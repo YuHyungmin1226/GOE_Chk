@@ -8,10 +8,6 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from dotenv import load_dotenv
 
-load_dotenv()
-TODO26_TOKEN = os.environ.get("TODO26_TOKEN")
-TODO26_URL = "https://www.todo26.site/api/add_todo"
-
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/tasks']
 
@@ -68,28 +64,6 @@ def create_task(title, notes=None, due=None):
         print(f"Failed to create task: {err}")
         return None
 
-def create_todo26_task(content):
-    """Todo26 사이트에 할 일을 추가합니다."""
-    if not TODO26_TOKEN:
-        print("Error: TODO26_TOKEN이 설정되지 않았습니다.")
-        return None
-    
-    headers = {
-        "Authorization": f"Bearer {TODO26_TOKEN}",
-        "Content-Type": "application/json"
-    }
-    data = {"content": content}
-    
-    try:
-        response = requests.post(TODO26_URL, headers=headers, json=data, timeout=10)
-        if response.ok:
-            return response.json()
-        else:
-            print(f"Todo26 API 오류: {response.status_code} - {response.text}")
-            return None
-    except Exception as e:
-        print(f"Todo26 API 요청 중 예외 발생: {e}")
-        return None
 
 if __name__ == "__main__":
     # 간단한 테스트

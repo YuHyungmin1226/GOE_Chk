@@ -264,24 +264,17 @@ def process_cycle():
             if res.get("is_task"):
                 print(f"-> 업무 감지: {res['title']} (보낸이: {orig_msg['sender']})")
                 
-                notes = f"보낸이: {orig_msg['sender']}\n원문: {orig_msg['content']}\n\n{res.get('notes', '')}"
-                due = f"{res['due_date']}T09:00:00Z" if res.get('due_date') else None
-                
-                # 1. Google Tasks 등록 (사용자 요청으로 비활성화)
-                # reg_result = task_manager.create_task(res['title'], notes, due)
-                # if reg_result:
-                #     print(f"   [성공] Google Tasks에 등록되었습니다.")
-                
-                # 2. Todo26 사이트 등록 (개선된 포맷: 제목/본문 분리 및 원문 포함)
-                todo26_content = (
-                    f"[{res['title']}]\n\n"
+                # Google Tasks 등록 (개선된 포맷: 본문에 원문 포함)
+                notes = (
                     f"상세내용: {res.get('notes', '')}\n\n"
                     f"원문참조:\n{orig_msg['content']}\n\n"
                     f"보낸이: {orig_msg['sender']}"
                 )
-                todo26_result = task_manager.create_todo26_task(todo26_content)
-                if todo26_result:
-                    print(f"   [성공] Todo26에 등록되었습니다.")
+                due = f"{res['due_date']}T09:00:00Z" if res.get('due_date') else None
+                
+                reg_result = task_manager.create_task(res['title'], notes, due)
+                if reg_result:
+                    print(f"   [성공] Google Tasks에 등록되었습니다.")
                     task_count += 1
             
             processed_ids.add(msg_id)
@@ -293,7 +286,7 @@ def process_cycle():
     print(f"--- 처리 완료: 새 메시지 {new_count}개 확인, {task_count}개의 업무 등록됨 ---")
 
 def main():
-    print("=== GOE Messenger to Todo26 Auto-Bridge (Gemini 1.5 Flash) ===")
+    print("=== GOE Messenger to Google Tasks Auto-Bridge (Gemini 1.5 Flash) ===")
     print("종료하려면 Ctrl+C를 누르세요.")
     
     try:
