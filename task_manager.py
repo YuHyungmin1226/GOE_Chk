@@ -7,6 +7,12 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from dotenv import load_dotenv
+import logging
+
+logger = logging.getLogger(__name__)
+
+load_dotenv()
+TASK_LIST_ID = os.environ.get("GOOGLE_TASK_LIST_ID", "@default")
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/tasks']
@@ -25,7 +31,7 @@ def get_service():
             creds.refresh(Request())
         else:
             if not os.path.exists('credentials.json'):
-                print("Error: 'credentials.json' 파일이 없습니다. Google Cloud Console에서 다운로드하여 배치해주세요.")
+                logger.error("'credentials.json' 파일이 없습니다. Google Cloud Console에서 다운로드하여 배치해주세요.")
                 return None
             
             flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
@@ -39,7 +45,7 @@ def get_service():
         service = build('tasks', 'v1', credentials=creds)
         return service
     except HttpError as err:
-        print(f"An error occurred: {err}")
+        logger.error(f"Google Tasks API 연결 오류: {err}")
         return None
 
 def create_task(title, notes=None, due=None):
@@ -58,10 +64,10 @@ def create_task(title, notes=None, due=None):
         task_body['due'] = due
 
     try:
-        result = service.tasks().insert(tasklist='@default', body=task_body).execute()
+        result = service.tasks().insert(tasklist=TASK_LIST_ID, body=task_body).execute()
         return result
     except HttpError as err:
-        print(f"Failed to create task: {err}")
+        logger.error(f"Task 생성 실패: {err}")
         return None
 
 
