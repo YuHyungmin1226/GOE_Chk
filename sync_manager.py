@@ -54,15 +54,30 @@ class SyncManager:
             g_title = g_task['title']
             
             if g_id not in self.mapping:
-                # 2-A. Google에는 있지만 매핑에 없는 경우 (외부에서 추가됨)
-                logger.info(f"새로운 Google Task 발견: {g_title}")
-                new_todo = task_manager.create_todo26_task(g_title)
-                if new_todo and 'id' in new_todo:
-                    self.mapping[g_id] = str(new_todo['id'])
-                    logger.info(f"Todo26에 등록됨 (ID: {new_todo['id']})")
-                    # 상태가 이미 완료라면 Todo26도 업데이트
-                    if g_completed:
-                        task_manager.update_todo26_status(new_todo['id'], True)
+                # 2-A. Google에는 있지만 매핑에 없는 경우 -> 제목으로 기존 Todo26 항목 찾기
+                logger.info(f"매핑되지 않은 Google Task 발견: {g_title}")
+                
+                # 이미 매핑된 Todo26 ID 목록 (중복 매핑 방지)
+                mapped_todo_ids = set(self.mapping.values())
+                
+                # 제목이 일치하고 아직 매핑되지 않은 Todo26 항목 검색
+                match = next((t for t in todo26_tasks if t['content'] == g_title and str(t['id']) not in mapped_todo_ids), None)
+                
+                if match:
+                    logger.info(f"기존 Todo26 항목과 매칭됨: {match['id']}")
+                    self.mapping[g_id] = str(match['id'])
+                    # 상태 동기화 (Google 우선 혹은 완료 우선)
+                    if g_completed != match.get('completed', False):
+                        if g_completed: task_manager.update_todo26_status(match['id'], True)
+                        else: task_manager.update_task_status(g_id, True)
+                else:
+                    # 일치하는 항목이 없으면 새로 생성
+                    logger.info(f"일치하는 항목 없음. Todo26에 새로 등록합니다.")
+                    new_todo = task_manager.create_todo26_task(g_title)
+                    if new_todo and 'id' in new_todo:
+                        self.mapping[g_id] = str(new_todo['id'])
+                        if g_completed:
+                            task_manager.update_todo26_status(new_todo['id'], True)
             else:
                 # 2-B. 매핑에 있는 경우 -> 상태 동기화
                 t_id = self.mapping[g_id]
