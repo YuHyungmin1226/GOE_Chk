@@ -6,6 +6,7 @@ import json
 import time
 import datetime
 import logging
+import contextlib
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
@@ -154,7 +155,7 @@ def get_new_messages(processed_ids):
         
     messages = []
     try:
-        with sqlite3.connect(db_path) as conn:
+        with contextlib.closing(sqlite3.connect(db_path)) as conn:
             conn.text_factory = bytes
             cursor = conn.cursor()
             # 최근 7일간의 모든 메시지를 소급 분석하여 누락된 업무를 보완합니다.
