@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 
 # 내부 모듈
 import task_manager
+from sync_manager import SyncManager
 import subprocess
 import shutil
 
@@ -233,6 +234,7 @@ def analyze_tasks_batch(messages):
 
 def process_cycle():
     logger.info("새 메시지 확인 중...")
+    sync_mgr = SyncManager()
     processed_ids = load_processed_ids()
     new_messages = get_new_messages(processed_ids)
     
@@ -275,6 +277,14 @@ def process_cycle():
                 reg_result = task_manager.create_task(res['title'], notes, due)
                 if reg_result:
                     logger.info("Google Tasks에 등록되었습니다.")
+                    g_id = reg_result.get('id')
+                    
+                    # Todo26에도 동시 등록 및 매핑 저장
+                    todo_res = task_manager.create_todo26_task(res['title'])
+                    if todo_res and 'id' in todo_res:
+                        sync_mgr.add_mapping(g_id, todo_res['id'])
+                        logger.info(f"Todo26에도 등록 및 매핑 완료 (ID: {todo_res['id']})")
+                    
                     task_count += 1
             
             processed_ids.add(msg_id)
@@ -284,6 +294,12 @@ def process_cycle():
     
     save_processed_ids(processed_ids)
     logger.info(f"처리 완료: 새 메시지 {new_count}개 확인, {task_count}개의 업무 등록됨")
+    
+    # 주기 마지막에 전체 동기화 실행
+    try:
+        sync_mgr.sync()
+    except Exception as e:
+        logger.error(f"동기화 중 오류 발생: {e}")
 
 def main():
     logger.info("=== GOE Messenger to Google Tasks Auto-Bridge (Gemini 1.5 Flash) ===")
