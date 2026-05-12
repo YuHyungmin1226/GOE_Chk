@@ -39,13 +39,21 @@ class SyncManager:
         google_tasks = task_manager.list_tasks()
         todo26_tasks = task_manager.get_todo26_tasks()
         
+        # Todo26 응답 형식 처리 (리스트가 아닌 경우 대응)
+        if isinstance(todo26_tasks, dict):
+            # 만약 {"todos": [...]} 형태로 온다면 추출
+            todo26_tasks = todo26_tasks.get('todos', todo26_tasks.get('data', []))
+        
+        if not isinstance(todo26_tasks, list):
+            logger.error(f"Todo26 응답 형식이 올바르지 않습니다 (list 필요): {type(todo26_tasks)}")
+            todo26_tasks = []
+
         if not google_tasks and not todo26_tasks:
             logger.info("동기화할 데이터가 없습니다.")
             return
 
         # 검색 최적화를 위해 Todo26 데이터를 딕셔너리로 변환 (ID 기준)
-        # Todo26 API 응답 형식을 가정: [{"id": 123, "content": "...", "completed": False}, ...]
-        todo26_dict = {str(t['id']): t for t in todo26_tasks}
+        todo26_dict = {str(t['id']): t for t in todo26_tasks if isinstance(t, dict) and 'id' in t}
         
         # 2. Google Tasks 기준으로 순회
         for g_task in google_tasks:
