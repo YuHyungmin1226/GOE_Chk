@@ -13,7 +13,6 @@ from dotenv import load_dotenv
 
 # 내부 모듈
 import task_manager
-from sync_manager import SyncManager
 import subprocess
 import shutil
 
@@ -233,20 +232,12 @@ def analyze_tasks_batch(messages):
     return []
 
 def process_cycle():
-    logger.info("동기화 및 새 메시지 확인 중...")
-    sync_mgr = SyncManager()
-    
-    # 1. 플랫폼 간 동기화 먼저 수행
-    try:
-        sync_mgr.sync()
-    except Exception as e:
-        logger.error(f"동기화 중 오류 발생: {e}")
-
-    # 2. 새 메시지 확인 및 등록
+    logger.info("새 메시지 확인 중...")
     processed_ids = load_processed_ids()
     new_messages = get_new_messages(processed_ids)
     
     if not new_messages:
+        logger.info("새로운 메시지가 없습니다.")
         return
         
     new_count = len(new_messages)
@@ -281,17 +272,11 @@ def process_cycle():
                 )
                 due = f"{res['due_date']}T09:00:00Z" if res.get('due_date') else None
                 
-                reg_result = task_manager.create_task(res['title'], notes, due)
+                # Todo26 등록 (Google Tasks 대신)
+                full_content = f"[{res['title']}]\n{notes}"
+                reg_result = task_manager.create_todo26_task(full_content)
                 if reg_result:
-                    logger.info("Google Tasks에 등록되었습니다.")
-                    g_id = reg_result.get('id')
-                    
-                    # Todo26에도 동시 등록 및 매핑 저장
-                    todo_res = task_manager.create_todo26_task(res['title'])
-                    if todo_res and 'id' in todo_res:
-                        sync_mgr.add_mapping(g_id, todo_res['id'])
-                        logger.info(f"Todo26에도 등록 및 매핑 완료 (ID: {todo_res['id']})")
-                    
+                    logger.info(f"Todo26에 업무가 등록되었습니다: {res['title']}")
                     task_count += 1
             
             processed_ids.add(msg_id)
