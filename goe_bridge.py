@@ -233,13 +233,20 @@ def analyze_tasks_batch(messages):
     return []
 
 def process_cycle():
-    logger.info("새 메시지 확인 중...")
+    logger.info("동기화 및 새 메시지 확인 중...")
     sync_mgr = SyncManager()
+    
+    # 1. 플랫폼 간 동기화 먼저 수행
+    try:
+        sync_mgr.sync()
+    except Exception as e:
+        logger.error(f"동기화 중 오류 발생: {e}")
+
+    # 2. 새 메시지 확인 및 등록
     processed_ids = load_processed_ids()
     new_messages = get_new_messages(processed_ids)
     
     if not new_messages:
-        logger.info("새로운 메시지가 없습니다.")
         return
         
     new_count = len(new_messages)
@@ -294,12 +301,6 @@ def process_cycle():
     
     save_processed_ids(processed_ids)
     logger.info(f"처리 완료: 새 메시지 {new_count}개 확인, {task_count}개의 업무 등록됨")
-    
-    # 주기 마지막에 전체 동기화 실행
-    try:
-        sync_mgr.sync()
-    except Exception as e:
-        logger.error(f"동기화 중 오류 발생: {e}")
 
 def main():
     logger.info("=== GOE Messenger to Google Tasks Auto-Bridge (Gemini 1.5 Flash) ===")
