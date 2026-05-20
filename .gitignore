@@ -1,5 +1,7 @@
 # API Keys and Secrets
 .env
+credentials.json
+token.json
 
 # Local Databases and Snapshots (Personal/Work Data)
 *.db

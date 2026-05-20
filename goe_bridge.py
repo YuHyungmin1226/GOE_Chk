@@ -272,11 +272,9 @@ def process_cycle():
                 )
                 due = f"{res['due_date']}T09:00:00Z" if res.get('due_date') else None
                 
-                # Todo26 등록 (Google Tasks 대신)
-                full_content = f"[{res['title']}]\n{notes}"
-                reg_result = task_manager.create_todo26_task(full_content)
+                reg_result = task_manager.create_task(title=res['title'], notes=notes, due=due)
                 if reg_result:
-                    logger.info(f"Todo26에 업무가 등록되었습니다: {res['title']}")
+                    logger.info(f"Google Tasks에 업무가 등록되었습니다: {res['title']}")
                     task_count += 1
             
             processed_ids.add(msg_id)
